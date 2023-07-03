@@ -33,11 +33,14 @@ def reply(message):
         bot.send_audio(message.chat.id, audio)
 
     else:
-        markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("Посети этот сайт",
-                   url="https://gpt-chatbot.ru/?ysclid=ljiwceqjo1404488279"))
-        bot.send_message(
-            message.chat.id, "Задай любой интересующий тебя вопрос", reply_markup=markup)
+        while True:
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            button_zaeb = types.KeyboardButton(
+                "Нажми,чтобы все это закончилось")
+            markup.add(button_zaeb)
+            bot.send_message(message.chat.id, "Hello", reply_markup=markup)
+            if message.text == "Нажми,чтобы все это закончилось":
+                break
 
 
 bot.polling(none_stop=True)
