@@ -1,49 +1,46 @@
 import telebot
 from telebot import types
 import webbrowser
-import sqlite3
-
+import sqlite3 as sq
 bot = telebot.TeleBot("6360322093:AAGRgi8gYtIOXhUrK3Csx2RM4UE1pgVsafA")
-name=" "
 
 
 @bot.message_handler(commands=["start"])
 def start(message):
-    conn=sqlite3.connect('example.sql')
-    cur=conn.cursor()
-
-    cur.execute("""CREATE TABLE IF NOT EXISTS cars (
-        car_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        model TEXT,
-        price INTEGER
-    )""")
-    conn.commit()
-    cur.close()
-    conn.close()
+    markup = types.ReplyKeyboardMarkup()
+    btn_db1 = types.KeyboardButton("Хочешь узнать что-то новое?")
+    btn_db2 = types.KeyboardButton("Неинтересно!!")
+    markup.row(btn_db1, btn_db2)
+    bot.send_message(message.chat.id, "Добро пожаловать!!",
+                     reply_markup=markup)
 
 
-    bot.send_message(message.chat.id,"Привет, сейчас мы тебя зарегистрируем!Введите свое имя")
-    bot.register_callback_query_handler(message,user_name)
-   
-def user_name(message):
-    global name
-    name=message.text.strip()
-    bot.send_message(message.chat.id,"Введите пароль:")
-    bot.register_next_step_handler(message,user_pass)
-def user_pass(message):
-    password=message.text.strip()
-    bot.send_message(message.chat.id,)
-    conn=sqlite3.connect("example.sql")
-    cur=conn.cursor()
-    cur.execute("INSERT INTO users(name,pass) VALUES('%s','%s')"%(name,password))
-    conn.commit()
-    cur.close()
-    conn.close()
-    markup=types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("Список пользователей",callback_data="users"))
-    bot.send_message(message.chat.id,"Пользователь зарегистрирован!!",reply_markup=markup)
+@bot.message_handler(content_types=["text"])
+def on_click(message):
+    if message.text == "Хочешь узнать что-то новое?":
+        markup = types.InlineKeyboardMarkup()
+        photo_btn = types.InlineKeyboardButton(
+            "Фотография", callback_data="photo")
+        name_btn = types.InlineKeyboardButton("Имя", callback_data="name")
+        markup.row(photo_btn, name_btn)
+        bot.send_message(message.chat.id, "Выберите действие",
+                         reply_markup=markup)
+    elif message.text == "Неинтересно!!":
+        bot.send_message(
+            message.chat.id, "https://dzen.ru/?clid=2411725&yredirect=true")
 
+
+@bot.callback_query_handler(func=lambda callback: True)
+def callback_message(callback):
+    with sq.connect("DB for tg.db") as conn:
+        cur = conn.cursor()
+        cur.execute("""CREATE TABLE IF NOT EXISTS users(
+                    name TEXT NOT NULL,
+                    photo BLOB UNIQUE NOT NULL
+        ) """)
+        if callback.data == "name":
+            cur.execute("""INSERT INTO users(name) VALUES (?)""",
+                        callback.message.from_user.first_name)
 
 
 bot.polling(none_stop=True)
-
